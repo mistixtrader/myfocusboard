@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Board</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --bg-accent: radial-gradient(circle at top left, rgba(0, 150, 136, 0.16), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.12), transparent 30%);
+      --panel: rgba(255, 255, 255, 0.9);
+      --panel-border: rgba(15, 23, 42, 0.08);
+      --text: #18212f;
+      --muted: #5f6b7a;
+      --primary: #0f766e;
+      --primary-strong: #115e59;
+      --accent: #e9f7f5;
+      --danger: #b42318;
+      --danger-bg: #fff2f0;
+      --shadow: 0 24px 55px rgba(15, 23, 42, 0.12);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      background: var(--bg-accent), var(--bg);
+      color: var(--text);
+      font-family: "Aptos", "Segoe UI", "Trebuchet MS", sans-serif;
+      line-height: 1.5;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    :focus-visible {
+      outline: 3px solid rgba(15, 118, 110, 0.35);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .shell {
+      width: min(1100px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    .hero {
+      display: grid;
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--primary);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 42rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .board {
+      display: grid;
+      gap: 1.25rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.35rem;
+    }
+
+    .panel h2,
+    .panel h3 {
+      margin: 0;
+    }
+
+    .timer-panel {
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .mode-switch {
+      display: inline-grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      padding: 0.35rem;
+      background: rgba(15, 118, 110, 0.08);
+      border-radius: 999px;
+      width: fit-content;
+    }
+
+    .mode-switch button,
+    .control-row button,
+    .filter-bar button,
+    .task-form button,
+    .toolbar-btn,
+    .delete-btn {
+      border: 0;
+      border-radius: 999px;
+      transition: transform 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .mode-switch button {
+      min-width: 7rem;
+      padding: 0.8rem 1rem;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .mode-switch button[aria-pressed="true"] {
+      background: #ffffff;
+      color: var(--text);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+    }
+
+    .timer-face {
+      display: grid;
+      place-items: center;
+      gap: 0.45rem;
+      min-height: 18rem;
+      padding: 1rem;
+      border-radius: calc(var(--radius) - 8px);
+      background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 55%),
+        linear-gradient(145deg, rgba(15, 118, 110, 0.12), rgba(15, 23, 42, 0.04));
+      text-align: center;
+    }
+
+    .timer-label {
+      margin: 0;
+      color: var(--primary);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .timer-display {
+      margin: 0;
+      font-size: clamp(3.3rem, 12vw, 6rem);
+      font-weight: 800;
+      letter-spacing: -0.08em;
+      line-height: 0.95;
+    }
+
+    .timer-note {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .control-row,
+    .task-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .control-row button,
+    .task-form button {
+      padding: 0.9rem 1.2rem;
+      font-weight: 700;
+    }
+
+    .primary-btn {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 14px 28px rgba(15, 118, 110, 0.22);
+    }
+
+    .secondary-btn {
+      background: rgba(15, 23, 42, 0.08);
+      color: var(--text);
+    }
+
+    .ghost-btn,
+    .toolbar-btn {
+      background: transparent;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      color: var(--text);
+    }
+
+    .toolbar-btn {
+      padding: 0.8rem 1rem;
+      font-weight: 700;
+    }
+
+    .clear-all-btn {
+      color: var(--danger);
+      border-color: rgba(180, 35, 24, 0.18);
+      background: rgba(255, 241, 239, 0.85);
+    }
+
+    .control-row button:hover,
+    .filter-bar button:hover,
+    .task-form button:hover,
+    .toolbar-btn:hover,
+    .delete-btn:hover,
+    .mode-switch button:hover {
+      transform: translateY(-1px);
+    }
+
+    .settings-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .field {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .field label {
+      font-weight: 700;
+    }
+
+    .field input,
+    .task-form input {
+      width: 100%;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--text);
+      padding: 0.85rem 1rem;
+    }
+
+    .field span {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .tasks-panel {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+
+    .summary-card {
+      display: grid;
+      gap: 0.25rem;
+      padding: 1rem 1.1rem;
+      border-radius: calc(var(--radius) - 8px);
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(15, 23, 42, 0.04));
+    }
+
+    .summary-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .summary-value {
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .progress-meter {
+      height: 0.8rem;
+      margin-top: 0.55rem;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.1);
+    }
+
+    .progress-fill {
+      display: block;
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--primary), #34d399);
+      transition: width 180ms ease;
+    }
+
+    .session-card {
+      display: grid;
+      gap: 0.2rem;
+      padding: 1rem 1.1rem;
+      border-radius: calc(var(--radius) - 8px);
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(255, 255, 255, 0.7));
+    }
+
+    .session-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .session-value {
+      font-size: clamp(1.9rem, 5vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .insight-card {
+      display: grid;
+      gap: 0.35rem;
+      padding: 1rem 1.1rem;
+      border-radius: calc(var(--radius) - 8px);
+      background: linear-gradient(140deg, rgba(15, 118, 110, 0.12), rgba(255, 255, 255, 0.72));
+    }
+
+    .insight-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .insight-grid {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 0.25rem;
+    }
+
+    .insight-metric {
+      display: grid;
+      gap: 0.15rem;
+      padding: 0.8rem 0.9rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(15, 23, 42, 0.05);
+    }
+
+    .insight-metric strong {
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+
+    .insight-metric span {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .insight-recommendation {
+      margin-top: 0.3rem;
+      padding: 0.85rem 0.95rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.74);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .task-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    .task-toolbar {
+      justify-content: space-between;
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      flex: 1 1 auto;
+    }
+
+    .filter-bar button {
+      flex: 1 1 6rem;
+      padding: 0.75rem 0.95rem;
+      background: rgba(15, 23, 42, 0.06);
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .filter-bar button[aria-pressed="true"] {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 10px 22px rgba(15, 118, 110, 0.18);
+    }
+
+    .task-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .task-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.95rem 1rem;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .task-main {
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
+    .task-main input[type="checkbox"] {
+      width: 1.2rem;
+      height: 1.2rem;
+      margin-top: 0.15rem;
+      accent-color: var(--primary);
+      flex: 0 0 auto;
+    }
+
+    .task-main label {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .task-item.completed label {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+
+    .delete-btn {
+      padding: 0.7rem 0.95rem;
+      background: var(--danger-bg);
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .empty-state {
+      margin: 0;
+      padding: 1rem;
+      border: 1px dashed rgba(15, 23, 42, 0.18);
+      border-radius: 18px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 800px) {
+      .shell {
+        width: min(100% - 1rem, 42rem);
+        padding-top: 1rem;
+      }
+
+      .board,
+      .settings-grid,
+      .insight-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        padding: 1.1rem;
+      }
+
+      .timer-face {
+        min-height: 15rem;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .task-form {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .control-row,
+      .task-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .task-form button,
+      .control-row button,
+      .toolbar-btn,
+      .mode-switch {
+        width: 100%;
+      }
+
+      .mode-switch {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero" aria-label="Focus Board introduction">
+      <div class="hero-top">
+        <div>
+          <p class="eyebrow">Focus Board</p>
+          <h1>Stay on task without leaving the page.</h1>
+        </div>
+
+        <button type="button" class="toolbar-btn clear-all-btn" id="clearAllBtn">Clear All</button>
+      </div>
+      <p>Use a simple Pomodoro timer, track your tasks, and get lightweight focus recommendations based only on local browser data.</p>
+    </section>
+
+    <section class="board" aria-label="Focus Board workspace">
+      <div class="panel timer-panel">
+        <div>
+          <h2>Pomodoro Timer</h2>
+        </div>
+
+        <div class="mode-switch" role="group" aria-label="Timer mode">
+          <button type="button" id="focusModeBtn" aria-pressed="true">Focus</button>
+          <button type="button" id="breakModeBtn" aria-pressed="false">Break</button>
+        </div>
+
+        <section class="timer-face" aria-labelledby="timerHeading">
+          <h3 class="timer-label" id="timerHeading">Current Session</h3>
+          <p class="timer-display" id="timerDisplay">25:00</p>
+          <p class="timer-note" id="timerNote">Focus session ready</p>
+        </section>
+
+        <div class="control-row" role="group" aria-label="Timer controls">
+          <button type="button" class="primary-btn" id="startPauseBtn">Start</button>
+          <button type="button" class="secondary-btn" id="resetBtn">Reset</button>
+          <button type="button" class="ghost-btn" id="switchBtn">Switch Session</button>
+        </div>
+
+        <section class="session-card" aria-labelledby="sessionHeading">
+          <p id="sessionHeading">Today's Focus Sessions</p>
+          <div class="session-value" id="sessionCount">0</div>
+          <p>Resets automatically each day</p>
+        </section>
+
+        <div class="settings-grid">
+          <div class="field">
+            <label for="focusMinutes">Focus duration</label>
+            <input id="focusMinutes" name="focusMinutes" type="number" min="1" max="180" inputmode="numeric">
+            <span>Minutes per focus session</span>
+          </div>
+
+          <div class="field">
+            <label for="breakMinutes">Break duration</label>
+            <input id="breakMinutes" name="breakMinutes" type="number" min="1" max="60" inputmode="numeric">
+            <span>Minutes per break session</span>
+          </div>
+        </div>
+
+        <section class="insight-card" aria-labelledby="insightHeading">
+          <h3 id="insightHeading">Adaptive Habit Insights</h3>
+          <p>Local-only recommendations from your own focus history.</p>
+
+          <div class="insight-grid">
+            <div class="insight-metric">
+              <p>Best duration</p>
+              <strong id="bestDurationValue">Not enough data</strong>
+              <span id="bestDurationMeta">Track a few focus attempts to compare durations.</span>
+            </div>
+
+            <div class="insight-metric">
+              <p>Best window</p>
+              <strong id="bestWindowValue">Not enough data</strong>
+              <span id="bestWindowMeta">Session start times are grouped by time of day.</span>
+            </div>
+
+            <div class="insight-metric">
+              <p>Recent consistency</p>
+              <strong id="consistencyValue">Building</strong>
+              <span id="consistencyMeta">Uses the last 10 focus outcomes.</span>
+            </div>
+          </div>
+
+          <p class="insight-recommendation" id="insightRecommendation">Complete a focus session to build local insights.</p>
+        </section>
+      </div>
+
+      <div class="panel tasks-panel">
+        <div>
+          <h2>Tasks</h2>
+        </div>
+
+        <section class="summary-card" aria-labelledby="progressHeading">
+          <p id="progressHeading">Progress Summary</p>
+          <div class="summary-value" id="progressValue">0 / 0</div>
+          <div class="progress-meter" id="progressBarTrack" role="progressbar" aria-labelledby="progressHeading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="0% complete">
+            <span class="progress-fill" id="progressBar"></span>
+          </div>
+          <p id="progressText">No tasks yet</p>
+        </section>
+
+        <form class="task-form" id="taskForm">
+          <div class="field">
+            <label for="taskInput">Add a task</label>
+            <input
+              id="taskInput"
+              name="taskInput"
+              type="text"
+              maxlength="120"
+              placeholder="Write your next priority"
+              autocomplete="off"
+              required
+            >
+          </div>
+          <button type="submit" class="primary-btn">Add Task</button>
+        </form>
+
+        <div class="task-toolbar">
+          <div class="filter-bar" role="group" aria-label="Task filters">
+            <button type="button" id="filterAllBtn" aria-pressed="true">All</button>
+            <button type="button" id="filterActiveBtn" aria-pressed="false">Active</button>
+            <button type="button" id="filterCompletedBtn" aria-pressed="false">Completed</button>
+          </div>
+
+          <button type="button" class="toolbar-btn" id="clearCompletedBtn">Clear Completed</button>
+        </div>
+
+        <section aria-labelledby="taskListHeading">
+          <h3 class="sr-only" id="taskListHeading">Task list</h3>
+          <ul class="task-list" id="taskList"></ul>
+          <p class="empty-state" id="emptyState">Add a task to start tracking your progress.</p>
+        </section>
+      </div>
+    </section>
+    <div class="sr-only" id="liveRegion" aria-live="polite" aria-atomic="true"></div>
+  </main>
+
+  <script>
+    (function () {
+      function padNumber(value) {
+        return String(value).padStart(2, "0");
+      }
+
+      function getTodayKey() {
+        var now = new Date();
+        return now.getFullYear() + "-" + padNumber(now.getMonth() + 1) + "-" + padNumber(now.getDate());
+      }
+
+      function getTimeWindow(date) {
+        var hour = date.getHours();
+        if (hour >= 5 && hour <= 11) {
+          return "morning";
+        }
+        if (hour >= 12 && hour <= 16) {
+          return "afternoon";
+        }
+        if (hour >= 17 && hour <= 21) {
+          return "evening";
+        }
+        return "night";
+      }
+
+      function createWindowStats() {
+        return {
+          morning: { started_count: 0, completed_count: 0 },
+          afternoon: { started_count: 0, completed_count: 0 },
+          evening: { started_count: 0, completed_count: 0 },
+          night: { started_count: 0, completed_count: 0 }
+        };
+      }
+
+      var STORAGE_KEY = "focus-board-state";
+      var TIME_WINDOWS = ["morning", "afternoon", "evening", "night"];
+      var TIME_WINDOW_LABELS = {
+        morning: "Morning",
+        afternoon: "Afternoon",
+        evening: "Evening",
+        night: "Night"
+      };
+      var MAX_HISTORY = 120;
+      var DEFAULT_STATE = {
+        focusMinutes: 25,
+        breakMinutes: 5,
+        mode: "focus",
+        remainingSeconds: 25 * 60,
+        isRunning: false,
+        completedFocusSessions: 0,
+        sessionDate: getTodayKey(),
+        tasks: [],
+        insightStats: {
+          durationStats: {},
+          windowStats: createWindowStats()
+        },
+        sessionHistory: [],
+        activeFocusAttempt: null
+      };
+
+      var timerId = null;
+      var dayResetTimer = null;
+      var activeFilter = "all";
+
+      var elements = {
+        focusModeBtn: document.getElementById("focusModeBtn"),
+        breakModeBtn: document.getElementById("breakModeBtn"),
+        timerDisplay: document.getElementById("timerDisplay"),
+        timerNote: document.getElementById("timerNote"),
+        startPauseBtn: document.getElementById("startPauseBtn"),
+        resetBtn: document.getElementById("resetBtn"),
+        switchBtn: document.getElementById("switchBtn"),
+        focusMinutes: document.getElementById("focusMinutes"),
+        breakMinutes: document.getElementById("breakMinutes"),
+        sessionCount: document.getElementById("sessionCount"),
+        bestDurationValue: document.getElementById("bestDurationValue"),
+        bestDurationMeta: document.getElementById("bestDurationMeta"),
+        bestWindowValue: document.getElementById("bestWindowValue"),
+        bestWindowMeta: document.getElementById("bestWindowMeta"),
+        consistencyValue: document.getElementById("consistencyValue"),
+        consistencyMeta: document.getElementById("consistencyMeta"),
+        insightRecommendation: document.getElementById("insightRecommendation"),
+        clearAllBtn: document.getElementById("clearAllBtn"),
+        taskForm: document.getElementById("taskForm"),
+        taskInput: document.getElementById("taskInput"),
+        filterAllBtn: document.getElementById("filterAllBtn"),
+        filterActiveBtn: document.getElementById("filterActiveBtn"),
+        filterCompletedBtn: document.getElementById("filterCompletedBtn"),
+        clearCompletedBtn: document.getElementById("clearCompletedBtn"),
+        taskList: document.getElementById("taskList"),
+        emptyState: document.getElementById("emptyState"),
+        progressValue: document.getElementById("progressValue"),
+        progressText: document.getElementById("progressText"),
+        progressBarTrack: document.getElementById("progressBarTrack"),
+        progressBar: document.getElementById("progressBar"),
+        liveRegion: document.getElementById("liveRegion")
+      };
+
+      function createId() {
+        return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      }
+
+      function clampMinutes(value, min, max, fallback) {
+        var parsed = parseInt(value, 10);
+        if (Number.isNaN(parsed)) {
+          return fallback;
+        }
+        return Math.min(max, Math.max(min, parsed));
+      }
+
+      function sanitizeTask(task, index) {
+        var label = typeof task.text === "string" ? task.text.trim() : "";
+        if (!label) {
+          return null;
+        }
+
+        return {
+          id: typeof task.id === "string" && task.id ? task.id : createId() + index,
+          text: label.slice(0, 120),
+          completed: Boolean(task.completed)
+        };
+      }
+
+      function normalizeCounterStat(raw) {
+        var source = raw && typeof raw === "object" ? raw : {};
+        var started = parseInt(source.started_count, 10);
+        var completed = parseInt(source.completed_count, 10);
+
+        if (!Number.isFinite(started) || started < 0) {
+          started = 0;
+        }
+        if (!Number.isFinite(completed) || completed < 0) {
+          completed = 0;
+        }
+
+        return {
+          started_count: started,
+          completed_count: Math.min(started, completed)
+        };
+      }
+
+      function normalizeDurationStats(raw) {
+        var source = raw && typeof raw === "object" ? raw : {};
+        var result = {};
+
+        Object.keys(source).forEach(function (key) {
+          var minutes = parseInt(key, 10);
+          if (!Number.isFinite(minutes) || minutes < 1 || minutes > 180) {
+            return;
+          }
+          result[String(minutes)] = normalizeCounterStat(source[key]);
+        });
+
+        return result;
+      }
+
+      function normalizeWindowStats(raw) {
+        var source = raw && typeof raw === "object" ? raw : {};
+        var result = createWindowStats();
+
+        TIME_WINDOWS.forEach(function (windowName) {
+          result[windowName] = normalizeCounterStat(source[windowName]);
+        });
+
+        return result;
+      }
+
+      function normalizeAttempt(raw) {
+        var source = raw && typeof raw === "object" ? raw : null;
+        var duration;
+        var windowName;
+        var startedAt;
+
+        if (!source) {
+          return null;
+        }
+
+        duration = parseInt(source.duration, 10);
+        windowName = TIME_WINDOWS.indexOf(source.window) > -1 ? source.window : null;
+        startedAt = typeof source.startedAt === "string" ? source.startedAt : null;
+
+        if (!Number.isFinite(duration) || duration < 1 || duration > 180 || !windowName || !startedAt) {
+          return null;
+        }
+
+        return {
+          duration: duration,
+          window: windowName,
+          startedAt: startedAt
+        };
+      }
+
+      function normalizeHistory(raw) {
+        var source = Array.isArray(raw) ? raw : [];
+        var result = [];
+
+        source.forEach(function (entry) {
+          var item = entry && typeof entry === "object" ? entry : null;
+          var duration = item ? parseInt(item.duration, 10) : NaN;
+          var outcome = item && (item.outcome === 0 || item.outcome === 1) ? item.outcome : null;
+          var timestamp = item && typeof item.timestamp === "string" ? item.timestamp : null;
+          var windowName = item && TIME_WINDOWS.indexOf(item.window) > -1 ? item.window : null;
+
+          if (!Number.isFinite(duration) || duration < 1 || outcome === null || !timestamp || !windowName) {
+            return;
+          }
+
+          result.push({
+            timestamp: timestamp,
+            duration: duration,
+            window: windowName,
+            outcome: outcome
+          });
+        });
+
+        return result.slice(-MAX_HISTORY);
+      }
+
+      function normalizeState(rawState) {
+        var source = rawState && typeof rawState === "object" ? rawState : {};
+        var focusMinutes = clampMinutes(source.focusMinutes, 1, 180, DEFAULT_STATE.focusMinutes);
+        var breakMinutes = clampMinutes(source.breakMinutes, 1, 60, DEFAULT_STATE.breakMinutes);
+        var mode = source.mode === "break" ? "break" : "focus";
+        var today = getTodayKey();
+        var completedFocusSessions = parseInt(source.completedFocusSessions, 10);
+        var sessionDate = typeof source.sessionDate === "string" ? source.sessionDate : today;
+        var tasks = Array.isArray(source.tasks)
+          ? source.tasks.map(sanitizeTask).filter(Boolean)
+          : [];
+        var insightStats = source.insightStats && typeof source.insightStats === "object" ? source.insightStats : {};
+        var sessionHistory = normalizeHistory(source.sessionHistory);
+        var activeFocusAttempt = normalizeAttempt(source.activeFocusAttempt);
+        var fallbackSeconds = (mode === "focus" ? focusMinutes : breakMinutes) * 60;
+        var remainingSeconds = parseInt(source.remainingSeconds, 10);
+
+        if (!Number.isFinite(remainingSeconds) || remainingSeconds <= 0) {
+          remainingSeconds = fallbackSeconds;
+        }
+
+        if (!Number.isFinite(completedFocusSessions) || completedFocusSessions < 0) {
+          completedFocusSessions = 0;
+        }
+
+        if (sessionDate !== today) {
+          sessionDate = today;
+          completedFocusSessions = 0;
+        }
+
+        return {
+          focusMinutes: focusMinutes,
+          breakMinutes: breakMinutes,
+          mode: mode,
+          remainingSeconds: remainingSeconds,
+          isRunning: false,
+          completedFocusSessions: completedFocusSessions,
+          sessionDate: sessionDate,
+          tasks: tasks,
+          insightStats: {
+            durationStats: normalizeDurationStats(insightStats.durationStats),
+            windowStats: normalizeWindowStats(insightStats.windowStats)
+          },
+          sessionHistory: sessionHistory,
+          activeFocusAttempt: mode === "focus" ? activeFocusAttempt : null
+        };
+      }
+
+      function loadState() {
+        try {
+          var stored = localStorage.getItem(STORAGE_KEY);
+          return stored ? normalizeState(JSON.parse(stored)) : normalizeState(DEFAULT_STATE);
+        } catch (error) {
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch (storageError) {
+            // Ignore storage cleanup failures and continue with defaults.
+          }
+          return normalizeState(DEFAULT_STATE);
+        }
+      }
+
+      var state = loadState();
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            focusMinutes: state.focusMinutes,
+            breakMinutes: state.breakMinutes,
+            mode: state.mode,
+            remainingSeconds: state.remainingSeconds,
+            completedFocusSessions: state.completedFocusSessions,
+            sessionDate: state.sessionDate,
+            tasks: state.tasks,
+            insightStats: state.insightStats,
+            sessionHistory: state.sessionHistory,
+            activeFocusAttempt: state.activeFocusAttempt
+          }));
+        } catch (error) {
+          // Ignore storage failures so the page still works without persistence.
+        }
+      }
+
+      function resetAllData() {
+        stopTimer();
+        activeFilter = "all";
+        state = normalizeState(DEFAULT_STATE);
+        elements.taskInput.value = "";
+
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (error) {
+          // Ignore storage cleanup failures and continue with defaults.
+        }
+
+        saveState();
+        render();
+      }
+
+      function ensureDurationStat(minutes) {
+        var key = String(minutes);
+        if (!state.insightStats.durationStats[key]) {
+          state.insightStats.durationStats[key] = {
+            started_count: 0,
+            completed_count: 0
+          };
+        }
+        return state.insightStats.durationStats[key];
+      }
+
+      function ensureWindowStat(windowName) {
+        if (!state.insightStats.windowStats[windowName]) {
+          state.insightStats.windowStats[windowName] = {
+            started_count: 0,
+            completed_count: 0
+          };
+        }
+        return state.insightStats.windowStats[windowName];
+      }
+
+      function startFocusAttemptIfNeeded() {
+        var attempt;
+        var now;
+
+        if (state.mode !== "focus" || state.activeFocusAttempt) {
+          return false;
+        }
+
+        now = new Date();
+        attempt = {
+          startedAt: now.toISOString(),
+          duration: state.focusMinutes,
+          window: getTimeWindow(now)
+        };
+
+        state.activeFocusAttempt = attempt;
+        ensureDurationStat(attempt.duration).started_count += 1;
+        ensureWindowStat(attempt.window).started_count += 1;
+        saveState();
+        return true;
+      }
+
+      function resolveFocusAttempt(outcome) {
+        var attempt = state.activeFocusAttempt;
+
+        if (!attempt) {
+          return false;
+        }
+
+        if (outcome === 1) {
+          ensureDurationStat(attempt.duration).completed_count += 1;
+          ensureWindowStat(attempt.window).completed_count += 1;
+        }
+
+        state.sessionHistory.push({
+          timestamp: new Date().toISOString(),
+          duration: attempt.duration,
+          window: attempt.window,
+          outcome: outcome
+        });
+        state.sessionHistory = state.sessionHistory.slice(-MAX_HISTORY);
+        state.activeFocusAttempt = null;
+        saveState();
+        return true;
+      }
+
+      function scoreStat(stat) {
+        return (stat.completed_count + 1) / (stat.started_count + 2);
+      }
+
+      function pickBestDuration() {
+        var best = null;
+
+        Object.keys(state.insightStats.durationStats).forEach(function (key) {
+          var stat = state.insightStats.durationStats[key];
+          var minutes = parseInt(key, 10);
+          var candidate;
+
+          if (!stat || stat.started_count === 0) {
+            return;
+          }
+
+          candidate = {
+            minutes: minutes,
+            stat: stat,
+            score: scoreStat(stat)
+          };
+
+          if (
+            !best ||
+            candidate.score > best.score ||
+            (candidate.score === best.score && candidate.stat.completed_count > best.stat.completed_count) ||
+            (candidate.score === best.score &&
+              candidate.stat.completed_count === best.stat.completed_count &&
+              candidate.minutes < best.minutes)
+          ) {
+            best = candidate;
+          }
+        });
+
+        return best;
+      }
+
+      function pickBestWindow() {
+        var best = null;
+
+        TIME_WINDOWS.forEach(function (windowName, index) {
+          var stat = state.insightStats.windowStats[windowName];
+          var candidate;
+
+          if (!stat || stat.started_count === 0) {
+            return;
+          }
+
+          candidate = {
+            label: TIME_WINDOW_LABELS[windowName],
+            stat: stat,
+            score: scoreStat(stat),
+            order: index
+          };
+
+          if (
+            !best ||
+            candidate.score > best.score ||
+            (candidate.score === best.score && candidate.stat.completed_count > best.stat.completed_count) ||
+            (candidate.score === best.score &&
+              candidate.stat.completed_count === best.stat.completed_count &&
+              candidate.order < best.order)
+          ) {
+            best = candidate;
+          }
+        });
+
+        return best;
+      }
+
+      function getConsistency() {
+        var recent = state.sessionHistory.slice(-10);
+        var total = 0;
+        var score;
+
+        if (!recent.length) {
+          return {
+            label: "Building",
+            score: null,
+            count: 0
+          };
+        }
+
+        recent.forEach(function (entry) {
+          total += entry.outcome;
+        });
+        score = total / recent.length;
+
+        return {
+          label: score >= 0.75 ? "High" : score >= 0.4 ? "Medium" : "Low",
+          score: score,
+          count: recent.length
+        };
+      }
+
+      function buildRecommendation(bestDuration, bestWindow, consistency) {
+        if (!state.sessionHistory.length) {
+          return "Complete a focus session to build local insights.";
+        }
+
+        if (consistency.label === "Low") {
+          if (bestDuration && bestDuration.minutes < state.focusMinutes) {
+            return "Recent consistency is low; try shorter " + bestDuration.minutes + "-minute sessions.";
+          }
+          return "Recent consistency is low; try a shorter session.";
+        }
+
+        if (state.completedFocusSessions >= 2 && consistency.label === "High") {
+          return "You are doing well today; keep your current rhythm.";
+        }
+
+        if (bestDuration && bestWindow && bestWindow.score > bestDuration.score + 0.05) {
+          return "Your strongest focus window is " + bestWindow.label + ".";
+        }
+
+        if (bestDuration) {
+          return "You complete " + bestDuration.minutes + "-minute sessions most consistently.";
+        }
+
+        if (bestWindow) {
+          return "Your strongest focus window is " + bestWindow.label + ".";
+        }
+
+        return "Keep building local focus history for sharper guidance.";
+      }
+
+      function syncSessionDate() {
+        var today = getTodayKey();
+        if (state.sessionDate === today) {
+          return false;
+        }
+
+        state.sessionDate = today;
+        state.completedFocusSessions = 0;
+        saveState();
+        return true;
+      }
+
+      function scheduleDayReset() {
+        var now = new Date();
+        var nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+        if (dayResetTimer !== null) {
+          window.clearTimeout(dayResetTimer);
+        }
+
+        dayResetTimer = window.setTimeout(function () {
+          if (syncSessionDate()) {
+            render();
+          }
+          scheduleDayReset();
+        }, (nextMidnight.getTime() - now.getTime()) + 50);
+      }
+
+      function getModeMinutes(mode) {
+        return mode === "focus" ? state.focusMinutes : state.breakMinutes;
+      }
+
+      function formatTime(totalSeconds) {
+        var minutes = Math.floor(totalSeconds / 60);
+        var seconds = totalSeconds % 60;
+        return String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+      }
+
+      function updateTimerText() {
+        var label = state.mode === "focus" ? "Focus session" : "Break session";
+        var note = label + " ready";
+
+        if (state.isRunning) {
+          note = label + " in progress";
+        } else if (state.mode === "focus" && state.activeFocusAttempt) {
+          note = "Focus session paused";
+        }
+
+        elements.timerDisplay.textContent = formatTime(state.remainingSeconds);
+        elements.timerNote.textContent = note;
+        elements.startPauseBtn.textContent = state.isRunning ? "Pause" : "Start";
+        elements.focusModeBtn.setAttribute("aria-pressed", String(state.mode === "focus"));
+        elements.breakModeBtn.setAttribute("aria-pressed", String(state.mode === "break"));
+      }
+
+      function updateSettingsInputs() {
+        elements.focusMinutes.value = String(state.focusMinutes);
+        elements.breakMinutes.value = String(state.breakMinutes);
+      }
+
+      function updateSessionCount() {
+        elements.sessionCount.textContent = String(state.completedFocusSessions);
+      }
+
+      function updateProgress() {
+        var total = state.tasks.length;
+        var completed = state.tasks.filter(function (task) {
+          return task.completed;
+        }).length;
+        var percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+        elements.progressValue.textContent = completed + " / " + total;
+        elements.progressBar.style.width = percent + "%";
+        elements.progressBarTrack.setAttribute("aria-valuenow", String(percent));
+        elements.progressBarTrack.setAttribute("aria-valuetext", percent + "% complete");
+        elements.progressText.textContent = total === 0
+          ? "No tasks yet"
+          : completed === total
+            ? "All tasks complete"
+            : (total - completed) + " task" + (total - completed === 1 ? "" : "s") + " remaining";
+      }
+
+      function updateFilters() {
+        elements.filterAllBtn.setAttribute("aria-pressed", String(activeFilter === "all"));
+        elements.filterActiveBtn.setAttribute("aria-pressed", String(activeFilter === "active"));
+        elements.filterCompletedBtn.setAttribute("aria-pressed", String(activeFilter === "completed"));
+      }
+
+      function updateClearCompletedButton() {
+        elements.clearCompletedBtn.disabled = !state.tasks.some(function (task) {
+          return task.completed;
+        });
+      }
+
+      function updateInsights() {
+        var bestDuration = pickBestDuration();
+        var bestWindow = pickBestWindow();
+        var consistency = getConsistency();
+
+        elements.bestDurationValue.textContent = bestDuration ? bestDuration.minutes + " min" : "Not enough data";
+        elements.bestDurationMeta.textContent = bestDuration
+          ? bestDuration.stat.completed_count + "/" + bestDuration.stat.started_count + " completed, " + Math.round(bestDuration.score * 100) + "% smoothed score"
+          : "Track a few focus attempts to compare durations.";
+
+        elements.bestWindowValue.textContent = bestWindow ? bestWindow.label : "Not enough data";
+        elements.bestWindowMeta.textContent = bestWindow
+          ? bestWindow.stat.completed_count + "/" + bestWindow.stat.started_count + " completed, " + Math.round(bestWindow.score * 100) + "% smoothed score"
+          : "Session start times are grouped by time of day.";
+
+        elements.consistencyValue.textContent = consistency.label;
+        elements.consistencyMeta.textContent = consistency.count
+          ? Math.round(consistency.score * 100) + "% from the last " + consistency.count + " focus outcomes"
+          : "Uses the last 10 focus outcomes.";
+
+        elements.insightRecommendation.textContent = buildRecommendation(bestDuration, bestWindow, consistency);
+      }
+
+      function getFilteredTasks() {
+        if (activeFilter === "active") {
+          return state.tasks.filter(function (task) {
+            return !task.completed;
+          });
+        }
+
+        if (activeFilter === "completed") {
+          return state.tasks.filter(function (task) {
+            return task.completed;
+          });
+        }
+
+        return state.tasks;
+      }
+
+      function renderTasks() {
+        elements.taskList.innerHTML = "";
+
+        getFilteredTasks().forEach(function (task) {
+          var item = document.createElement("li");
+          item.className = "task-item" + (task.completed ? " completed" : "");
+
+          var main = document.createElement("div");
+          main.className = "task-main";
+
+          var checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.id = "task-" + task.id;
+          checkbox.checked = task.completed;
+          checkbox.setAttribute("aria-label", "Mark " + task.text + " as complete");
+          checkbox.addEventListener("change", function () {
+            task.completed = checkbox.checked;
+            saveState();
+            render();
+          });
+
+          var label = document.createElement("label");
+          label.htmlFor = checkbox.id;
+          label.textContent = task.text;
+
+          main.appendChild(checkbox);
+          main.appendChild(label);
+
+          var deleteButton = document.createElement("button");
+          deleteButton.type = "button";
+          deleteButton.className = "delete-btn";
+          deleteButton.textContent = "Delete";
+          deleteButton.setAttribute("aria-label", "Delete task " + task.text);
+          deleteButton.addEventListener("click", function () {
+            state.tasks = state.tasks.filter(function (entry) {
+              return entry.id !== task.id;
+            });
+            saveState();
+            render();
+            announce("Task deleted.");
+          });
+
+          item.appendChild(main);
+          item.appendChild(deleteButton);
+          elements.taskList.appendChild(item);
+        });
+
+        if (state.tasks.length === 0) {
+          elements.emptyState.textContent = "Add a task to start tracking your progress.";
+        } else if (activeFilter === "active") {
+          elements.emptyState.textContent = "No active tasks.";
+        } else if (activeFilter === "completed") {
+          elements.emptyState.textContent = "No completed tasks.";
+        } else {
+          elements.emptyState.textContent = "No tasks match this filter.";
+        }
+
+        elements.emptyState.hidden = getFilteredTasks().length > 0;
+      }
+
+      function render() {
+        syncSessionDate();
+        updateTimerText();
+        updateSettingsInputs();
+        updateSessionCount();
+        updateProgress();
+        updateFilters();
+        updateClearCompletedButton();
+        updateInsights();
+        renderTasks();
+      }
+
+      function announce(message) {
+        elements.liveRegion.textContent = "";
+        window.setTimeout(function () {
+          elements.liveRegion.textContent = message;
+        }, 20);
+      }
+
+      function stopTimer() {
+        if (timerId !== null) {
+          window.clearInterval(timerId);
+          timerId = null;
+        }
+        state.isRunning = false;
+      }
+
+      function completeCurrentSession() {
+        var finishedMode = state.mode;
+
+        stopTimer();
+        if (finishedMode === "focus") {
+          syncSessionDate();
+          resolveFocusAttempt(1);
+          state.completedFocusSessions += 1;
+        }
+
+        state.mode = finishedMode === "focus" ? "break" : "focus";
+        state.remainingSeconds = getModeMinutes(state.mode) * 60;
+        saveState();
+        render();
+        announce(
+          finishedMode === "focus"
+            ? "Focus session complete. Break session ready."
+            : "Break session complete. Focus session ready."
+        );
+      }
+
+      function startTimer() {
+        if (state.isRunning) {
+          return;
+        }
+
+        syncSessionDate();
+        if (state.mode === "focus") {
+          startFocusAttemptIfNeeded();
+        }
+
+        state.isRunning = true;
+        timerId = window.setInterval(function () {
+          if (state.remainingSeconds <= 1) {
+            completeCurrentSession();
+            return;
+          }
+
+          state.remainingSeconds -= 1;
+          saveState();
+          updateTimerText();
+        }, 1000);
+
+        saveState();
+        updateTimerText();
+        announce((state.mode === "focus" ? "Focus" : "Break") + " timer started.");
+      }
+
+      function resetTimer() {
+        var interrupted = state.mode === "focus" && resolveFocusAttempt(0);
+
+        stopTimer();
+        state.remainingSeconds = getModeMinutes(state.mode) * 60;
+        saveState();
+        render();
+        announce(interrupted ? "Focus session marked interrupted and timer reset." : "Timer reset.");
+      }
+
+      function switchMode(mode) {
+        var interrupted;
+
+        if (state.mode === mode) {
+          render();
+          return;
+        }
+
+        interrupted = state.mode === "focus" && resolveFocusAttempt(0);
+        stopTimer();
+        state.mode = mode;
+        state.remainingSeconds = getModeMinutes(mode) * 60;
+        saveState();
+        render();
+        announce(
+          interrupted
+            ? "Focus session marked interrupted. " + (mode === "focus" ? "Focus" : "Break") + " session selected."
+            : (mode === "focus" ? "Focus" : "Break") + " session selected."
+        );
+      }
+
+      elements.startPauseBtn.addEventListener("click", function () {
+        if (state.isRunning) {
+          stopTimer();
+          saveState();
+          render();
+          announce("Timer paused.");
+          return;
+        }
+        startTimer();
+      });
+
+      elements.resetBtn.addEventListener("click", resetTimer);
+
+      elements.switchBtn.addEventListener("click", function () {
+        switchMode(state.mode === "focus" ? "break" : "focus");
+      });
+
+      elements.focusModeBtn.addEventListener("click", function () {
+        switchMode("focus");
+      });
+
+      elements.breakModeBtn.addEventListener("click", function () {
+        switchMode("break");
+      });
+
+      elements.focusMinutes.addEventListener("change", function () {
+        state.focusMinutes = clampMinutes(elements.focusMinutes.value, 1, 180, state.focusMinutes);
+        if (!state.isRunning && state.mode === "focus" && !state.activeFocusAttempt) {
+          state.remainingSeconds = state.focusMinutes * 60;
+        }
+        saveState();
+        render();
+      });
+
+      elements.breakMinutes.addEventListener("change", function () {
+        state.breakMinutes = clampMinutes(elements.breakMinutes.value, 1, 60, state.breakMinutes);
+        if (!state.isRunning && state.mode === "break") {
+          state.remainingSeconds = state.breakMinutes * 60;
+        }
+        saveState();
+        render();
+      });
+
+      elements.taskForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var text = elements.taskInput.value.trim();
+        if (!text) {
+          return;
+        }
+
+        state.tasks.unshift({
+          id: createId(),
+          text: text.slice(0, 120),
+          completed: false
+        });
+        elements.taskInput.value = "";
+        saveState();
+        render();
+        elements.taskInput.focus();
+        announce("Task added.");
+      });
+
+      elements.clearCompletedBtn.addEventListener("click", function () {
+        if (!state.tasks.some(function (task) { return task.completed; })) {
+          return;
+        }
+
+        state.tasks = state.tasks.filter(function (task) {
+          return !task.completed;
+        });
+        saveState();
+        render();
+        announce("Completed tasks cleared.");
+      });
+
+      elements.clearAllBtn.addEventListener("click", function () {
+        if (!window.confirm("Clear all data and reset Focus Board?")) {
+          return;
+        }
+
+        resetAllData();
+        announce("All data cleared.");
+      });
+
+      elements.filterAllBtn.addEventListener("click", function () {
+        activeFilter = "all";
+        render();
+      });
+
+      elements.filterActiveBtn.addEventListener("click", function () {
+        activeFilter = "active";
+        render();
+      });
+
+      elements.filterCompletedBtn.addEventListener("click", function () {
+        activeFilter = "completed";
+        render();
+      });
+
+      scheduleDayReset();
+      render();
+    }());
+  </script>
+</body>
+</html>
